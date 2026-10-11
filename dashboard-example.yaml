@@ -1,0 +1,10 @@
+title: Energia
+views:
+  - title: Sorgenia
+    path: sorgenia
+    icon: mdi:lightning-bolt
+    cards:
+      - type: custom:sorgenia-dashboard-card
+        title: Sorgenia · Luce e gas
+        max_bills: 10
+
