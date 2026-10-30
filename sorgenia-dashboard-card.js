@@ -6,13 +6,15 @@ const DEFAULT_ENTITIES = {
   latestGasBill: "sensor.latest_gas_bill_amount",
   electricityDue: "sensor.electricity_remaining_due",
   gasDue: "sensor.gas_remaining_due",
+  electricityDueDate: "sensor.latest_electricity_bill_due_date",
+  gasDueDate: "sensor.latest_gas_bill_due_date",
   electricityStatus: "sensor.latest_electricity_bill_status",
   gasStatus: "sensor.latest_gas_bill_status",
   electricityBilledLatest: "sensor.latest_electricity_billed_consumption",
   electricityBilledTotal: "sensor.electricity_billed_consumption_total",
   electricityBilledMonths: "sensor.electricity_billed_consumption_months",
   electricityCurveLatest: "sensor.latest_curve_monthly_consumption",
-  electricityCurveTotal: "sensor.curve_consumption_total",
+  electricityCurveTotal: "sensor.sorgenia_curve_consumption_total",
   electricityBands: [
     "sensor.latest_consumption_band_1",
     "sensor.latest_consumption_band_2",
@@ -147,8 +149,8 @@ class SorgeniaDashboardCard extends HTMLElement {
 
         <section class="summary-grid">
           ${this._metric("Da pagare", money(totalDue), `${dueCount} bollette in addebito`, "mdi:wallet-outline", "accent")}
-          ${this._metric("Ultima bolletta luce", money(amountValue(this._hass, e.latestElectricityBill)), `Scadenza ${esc(this._value("electricityStatus") === "—" ? "—" : this._get("electricityDue")?.attributes?.due_date || "vedi dettaglio")}`, "mdi:flash-outline")}
-          ${this._metric("Ultima bolletta gas", money(amountValue(this._hass, e.latestGasBill)), `Scadenza ${esc(this._get("gasDue")?.attributes?.due_date || "vedi dettaglio")}`, "mdi:fire")}
+          ${this._metric("Ultima bolletta luce", money(amountValue(this._hass, e.latestElectricityBill)), `Scadenza ${this._value("electricityStatus") === "—" ? "—" : prettyDate(this._dueDate("electricityDueDate"))}`, "mdi:flash-outline")}
+          ${this._metric("Ultima bolletta gas", money(amountValue(this._hass, e.latestGasBill)), `Scadenza ${prettyDate(this._dueDate("gasDueDate"))}`, "mdi:fire")}
         </section>
 
         <section class="section">
@@ -186,6 +188,11 @@ class SorgeniaDashboardCard extends HTMLElement {
       </main>`;
   }
 
+  _dueDate(key) {
+    const state = this._get(key)?.state;
+    return state == null || state === "unknown" || state === "unavailable" ? undefined : state;
+  }
+
   _dateKey(value) {
     const text = String(value || "");
     const match = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
@@ -201,7 +208,7 @@ class SorgeniaDashboardCard extends HTMLElement {
   _supplyCard(name, icon, amountEntity, statusEntity, dueEntity, consumptionEntity, unit, costs, unitCostEntity) {
     const amount = money(amountValue(this._hass, amountEntity));
     const status = stateText(this._hass, statusEntity);
-    const dueDate = this._get(name === "Luce" ? "electricityDue" : "gasDue")?.attributes?.due_date;
+    const dueDate = this._dueDate(name === "Luce" ? "electricityDueDate" : "gasDueDate");
     const consumption = stateText(this._hass, consumptionEntity, unit);
     const costRows = Object.entries(COST_LABELS)
       .filter(([key]) => costs[key] !== undefined && Number(costs[key]) !== 0)
